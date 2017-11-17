@@ -8,7 +8,7 @@ class UI():
 
     def __init__(self, root, file_paths, reader_callback, overlay_callback):
         # Properties
-        self.IMG_SIZE = (1080, 720)
+        self.IMG_SIZE = (1000, 720)
         self.root = root
         self.frame_idx = 0
         self.file_idx = 0
@@ -30,8 +30,8 @@ class UI():
         self.label_font = tkFont.Font(family='Helvetica', size=15)
 
         # Row one
-        self.volunteer_idx_label = tk.Label(
-            self.bottom_frame, text="Volunteer NaN", font=self.label_font)
+        self.sequence_idx_label = tk.Label(
+            self.bottom_frame, text="Sequence NaN", font=self.label_font)
 
         self.frame_idx_label = tk.Label(
             self.bottom_frame, text="Frame: ", font=self.label_font)
@@ -79,10 +79,10 @@ class UI():
         self.panel.configure(image=img)
         self.panel.image = img
 
-        # Update the volunteer label
-        self.volunteer_idx_label.config(
-            text="Volunteer {} / {}".format(self.file_idx + 1, len(self.file_paths)))
-        self.volunteer_idx_label.grid(row=0, column=0)
+        # Update the sequence label
+        self.sequence_idx_label.config(
+            text="Sequence {} / {}".format(self.file_idx + 1, len(self.file_paths)))
+        self.sequence_idx_label.grid(row=0, column=0)
 
         # Update the frame label
         self.frame_idx_label.config(
