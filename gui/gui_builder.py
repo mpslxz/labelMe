@@ -139,7 +139,7 @@ class UI():
                 '_midline_labels.npy', labels)
         self.curr_file = self.overlayer(self.curr_file, labels)
         self.refresh()
-        print "Saved " + self.file_paths[self.file_idx]
+        print "{}".format(self.file_idx + 1) + " Saved " + self.file_paths[self.file_idx]
 
     def load_curr_b8(self):
         return self.reader(self.file_paths[self.file_idx])
