@@ -83,8 +83,15 @@ class UI():
 
         self.root.bind('<Shift-Right>', self.next_frame_override_callback)
         self.root.bind('<Shift-Left>', self.prev_frame_override_callback)
-
+        self.root.bind('<F1>', self.help_generator_callback)
         self.refresh()
+
+    def help_generator_callback(self, event):
+        tkMessageBox.showinfo("Hotkey Help",
+                              "Right/left:\tframe navigation\n" +
+                              "Shift+(Right/left):\tframe navigation with\t\t\tlabel override\n" +
+                              "Up/down:\tmove point\n" +
+                              "CTRL+(up/down):\tmove point fast")
 
     def refresh(self):
         # Update image
