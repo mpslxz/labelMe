@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 from scipy.misc import imresize
 
@@ -19,7 +20,7 @@ def b8_to_ndarray(filename, resize_to=None):
             f = np.fromfile(b8_file,
                             np.uint8, header['width'] * header['height']).reshape((header['height'], header['width']))
             f = f if resize_to is None else imresize(f, resize_to)
-            frames[frame, :, :] = f
+            frames[frame, :,:] = f
     return frames
 
 
@@ -52,3 +53,8 @@ def write_overlay(frames, results):
         frame += mask
         review_frames.append(frame)
     return np.asarray(review_frames)
+
+
+def line_drawer(img, p1, p2):
+
+    return cv2.line(img, p1, p2, (255, 0, 0))
