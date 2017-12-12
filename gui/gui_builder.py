@@ -6,9 +6,9 @@ import numpy as np
 
 class UI():
 
-    def __init__(self, root, file_paths, reader_callback, overlay_callback):
+    def __init__(self, root, file_paths, reader_callback, overlay_callback, IMAGE_SIZE=(640, 480)):
         # Properties
-        self.IMG_SIZE = (1000, 720)
+        self.IMG_SIZE = IMAGE_SIZE
         self.root = root
         self.frame_idx = 0
         self.file_idx = 0

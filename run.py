@@ -15,5 +15,6 @@ if __name__ == "__main__":
     file_path = glob.glob(sys.argv[1] + "/**/*.b8")
     root.title(
         "labelMe: A simple python tool for labling b8 images")
+
     UI = LUI(root, file_path, b8_to_ndarray, line_drawer)
     root.mainloop()
