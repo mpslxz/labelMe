@@ -9,7 +9,6 @@ class UI():
 
     def __init__(self, root, file_paths, reader_callback, overlay_callback):
         # Properties
-        self.IMG_SIZE = IMAGE_SIZE
         self.root = root
         self.frame_idx = 0
         self.file_idx = 0
@@ -17,6 +16,8 @@ class UI():
         self.reader = reader_callback
         self.overlayer = overlay_callback
         self.curr_file = self.load_curr_b8()
+        self.IMG_SIZE = (self.curr_file.shape[1],
+                         self.curr_file.shape[2])
         self.is_saved = False
         # Point initializer
 
@@ -101,7 +102,7 @@ class UI():
               int(curr_frame.shape[0]))
         curr_frame = self.overlayer(curr_frame, p1, p2)
         img = ImageTk.PhotoImage(
-            Image.fromarray(curr_frame).resize(self.IMG_SIZE, Image.ANTIALIAS))
+            Image.fromarray(curr_frame))
         self.panel.configure(image=img)
         self.panel.image = img
 
@@ -218,6 +219,8 @@ class UI():
                 self._set_seq_points(
                     self.init_top_point, self.init_bottom_point)
                 self.is_saved = False
+                self.IMG_SIZE = (self.curr_file.shape[1],
+                                 self.curr_file.shape[2])
                 self.refresh()
 
     def prev_scan_callback(self):
@@ -236,13 +239,9 @@ class UI():
                 self._set_seq_points(
                     self.init_top_point, self.init_bottom_point)
                 self.is_saved = False
+                self.IMG_SIZE = (self.curr_file.shape[1],
+                                 self.curr_file.shape[2])
                 self.refresh()
-
-    def start_midline_callback(self):
-        self.start_idx = self.frame_idx
-
-    def end_midline_callback(self):
-        self.end_idx = self.frame_idx
 
     def clear_label_callback(self):
         self.curr_file = self.load_curr_b8()
