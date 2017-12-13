@@ -30,6 +30,7 @@ class UI():
         # Top frame
         self.top_frame = tk.Frame(self.root)
         self.panel = tk.Label(self.top_frame)
+        self.panel.bind('<Button-1>', self.register_click_callback)
         self.panel.grid(row=0)
         self.top_frame.pack(side='top', fill='none', expand=True)
 
@@ -124,6 +125,13 @@ class UI():
         self.point_status_label.config(
             text=self.point_status, foreground=self.status_label_color)
         self.point_status_label.grid(row=1, column=2)
+
+    def register_click_callback(self, event):
+        if event.y > self.IMG_SIZE[0] / 2:
+            self.seq_points[self.frame_idx][1] = event.x
+        else:
+            self.seq_points[self.frame_idx][0] = event.x
+        self.refresh()
 
     def prev_frame_override_callback(self, event):
         if self.frame_idx - 1 > -1:
