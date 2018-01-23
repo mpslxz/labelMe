@@ -7,7 +7,19 @@ import tkMessageBox
 
 class UI():
 
-    def __init__(self, root, file_paths, reader_callback, overlay_callback):
+    def __init__(self, root, file_paths, reader_callback, overlay_callback, line_mode='vertical', logger=None):
+        """
+
+        :param root: GUI parent object
+        :param file_paths: Paths to read the files from
+        :param reader_callback: Reader function
+        :param overlay_callback: Overlay function
+        :param line_mode: 'vertical', 'normal'
+        :param logger: Log generator object
+        :returns: None
+
+        """
+
         # Properties
         self.root = root
         self.frame_idx = 0
@@ -19,8 +31,10 @@ class UI():
         self.IMG_SIZE = (self.curr_file.shape[1],
                          self.curr_file.shape[2])
         self.is_saved = False
-        # Point initializer
+        self.line_mode = line_mode
+        self.logger = logger
 
+        # Point initializer
         self.seq_points = np.zeros((len(self.curr_file), 2))
         self.init_top_point = self.curr_file.shape[2] / 2
         self.init_bottom_point = self.curr_file.shape[2] / 2
@@ -56,6 +70,8 @@ class UI():
         self.toggle_button = tk.Button(
             self.bottom_frame, text="Toggle Top/Bottom", font=self.button_font, command=self.toggle_callback)
         self.toggle_button.grid(row=1, column=1)
+        if self.line_mode == 'vertical':
+            self.toggle_button.config(state='disabled')
 
         self.point_status_label = tk.Label(
             self.bottom_frame, text="Top", font=self.label_font)
@@ -76,24 +92,45 @@ class UI():
         self.bottom_frame.pack(side='top', fill='none', expand=True)
 
         # Key bindings
-        self.root.bind('<Right>', self.next_frame_callback)
-        self.root.bind('<Left>', self.prev_frame_callback)
-        self.root.bind('<Up>', self.move_point_right_callback)
-        self.root.bind('<Down>', self.move_point_left_callback)
-        self.root.bind('<Control-Up>', self.move_point_right_fast_callback)
-        self.root.bind('<Control-Down>', self.move_point_left_fast_callback)
+        if self.line_mode == 'vertical':
+            self.root.bind('<Right>', self.move_point_right_callback)
+            self.root.bind('<Left>', self.move_point_left_callback)
+            self.root.bind(
+                '<Control-Right>', self.move_point_right_fast_callback)
+            self.root.bind(
+                '<Control-Left>', self.move_point_left_fast_callback)
+            self.root.bind('<Up>', self.next_frame_callback)
+            self.root.bind('<Down>', self.prev_frame_callback)
+            self.root.bind('<Shift-Up>', self.next_frame_override_callback)
+            self.root.bind('<Shift-Down>', self.prev_frame_override_callback)
 
-        self.root.bind('<Shift-Right>', self.next_frame_override_callback)
-        self.root.bind('<Shift-Left>', self.prev_frame_override_callback)
+        else:
+            self.root.bind('<Right>', self.next_frame_callback)
+            self.root.bind('<Left>', self.prev_frame_callback)
+            self.root.bind('<Up>', self.move_point_right_callback)
+            self.root.bind('<Down>', self.move_point_left_callback)
+            self.root.bind('<Control-Up>', self.move_point_right_fast_callback)
+            self.root.bind(
+                '<Control-Down>', self.move_point_left_fast_callback)
+
+            self.root.bind('<Shift-Right>', self.next_frame_override_callback)
+            self.root.bind('<Shift-Left>', self.prev_frame_override_callback)
         self.root.bind('<F1>', self.help_generator_callback)
         self.refresh()
 
     def help_generator_callback(self, event):
-        tkMessageBox.showinfo("Hotkey Help",
-                              "Right/left:\tframe navigation\n" +
-                              "Shift+(Right/left):\tframe navigation with\t\t\tlabel override\n" +
-                              "Up/down:\tmove point\n" +
-                              "CTRL+(up/down):\tmove point fast")
+        if self.line_mode == 'normal':
+            tkMessageBox.showinfo("Hotkey Help",
+                                  "Right/left:\tframe navigation\n\n" +
+                                  "Shift+(Right/left):\tframe navigation with\t\t\tlabel override\n\n" +
+                                  "Up/down:\tmove point\n\n" +
+                                  "CTRL+(up/down):\tmove point fast")
+        else:
+            tkMessageBox.showinfo("Hotkey Help",
+                                  "Right/left:\tMove line\n\n" +
+                                  "CTRL+(Right/left):\tMove line fast\n\n" +
+                                  "Up/down:\tNavigate between \t\t\t\tframes\n\n" +
+                                  "Shift+(up/down):\tFrame navigation with\t\t\tlabel override")
 
     def refresh(self):
         # Update image
@@ -122,15 +159,22 @@ class UI():
             text="Scan name: " + self.file_paths[self.file_idx].split('/')[-1])
         self.scan_name.grid(row=0, column=2)
         # Update the toggle label
-        self.point_status_label.config(
-            text=self.point_status, foreground=self.status_label_color)
-        self.point_status_label.grid(row=1, column=2)
+        if self.line_mode == 'vertical':
+            self.point_status_label.config(state='disabled')
+        else:
+            self.point_status_label.config(
+                text=self.point_status, foreground=self.status_label_color)
+            self.point_status_label.grid(row=1, column=2)
 
     def register_click_callback(self, event):
-        if event.y > self.IMG_SIZE[0] / 2:
+        if self.line_mode == 'vertical':
+            self.seq_points[self.frame_idx][0] = event.x
             self.seq_points[self.frame_idx][1] = event.x
         else:
-            self.seq_points[self.frame_idx][0] = event.x
+            if event.y > self.IMG_SIZE[0] / 2:
+                self.seq_points[self.frame_idx][1] = event.x
+            else:
+                self.seq_points[self.frame_idx][0] = event.x
         self.refresh()
 
     def prev_frame_override_callback(self, event):
@@ -157,49 +201,74 @@ class UI():
             self.refresh()
 
     def move_point_left_callback(self, event):
-        if self.point_status == "Top":
-            if self.seq_points[self.frame_idx][0] - 1 > -1:
+        if self.line_mode == 'vertical':
+            if self.seq_points[self.frame_idx][0] - 1 > -1 and \
+               self.seq_points[self.frame_idx][1] - 1 > -1:
                 self.seq_points[self.frame_idx][0] -= 1
-        if self.point_status == "Bottom":
-            if self.seq_points[self.frame_idx][1] - 1 > -1:
                 self.seq_points[self.frame_idx][1] -= 1
+        else:
+            if self.point_status == "Top":
+                if self.seq_points[self.frame_idx][0] - 1 > -1:
+                    self.seq_points[self.frame_idx][0] -= 1
+            if self.point_status == "Bottom":
+                if self.seq_points[self.frame_idx][1] - 1 > -1:
+                    self.seq_points[self.frame_idx][1] -= 1
         self.refresh()
 
     def move_point_right_callback(self, event):
-        if self.point_status == "Top":
-            if self.seq_points[self.frame_idx][0] + 1 < self.curr_file[self.frame_idx].shape[1]:
+        if self.line_mode == 'vertical':
+            if self.seq_points[self.frame_idx][0] + 1 < self.curr_file[self.frame_idx].shape[1] and \
+               self.seq_points[self.frame_idx][1] + 1 < self.curr_file[self.frame_idx].shape[1]:
                 self.seq_points[self.frame_idx][0] += 1
-        if self.point_status == "Bottom":
-            if self.seq_points[self.frame_idx][1] + 1 < self.curr_file[self.frame_idx].shape[1]:
                 self.seq_points[self.frame_idx][1] += 1
+        else:
+            if self.point_status == "Top":
+                if self.seq_points[self.frame_idx][0] + 1 < self.curr_file[self.frame_idx].shape[1]:
+                    self.seq_points[self.frame_idx][0] += 1
+            if self.point_status == "Bottom":
+                if self.seq_points[self.frame_idx][1] + 1 < self.curr_file[self.frame_idx].shape[1]:
+                    self.seq_points[self.frame_idx][1] += 1
         self.refresh()
 
     def move_point_left_fast_callback(self, event):
-        if self.point_status == "Top":
-            if self.seq_points[self.frame_idx][0] - 10 > -1:
+        if self.line_mode == 'vertical':
+            if self.seq_points[self.frame_idx][0] - 10 > -1 and \
+               self.seq_points[self.frame_idx][1] - 10 > -1:
                 self.seq_points[self.frame_idx][0] -= 10
-        if self.point_status == "Bottom":
-            if self.seq_points[self.frame_idx][1] - 10 > -1:
                 self.seq_points[self.frame_idx][1] -= 10
+        else:
+            if self.point_status == "Top":
+                if self.seq_points[self.frame_idx][0] - 10 > -1:
+                    self.seq_points[self.frame_idx][0] -= 10
+            if self.point_status == "Bottom":
+                if self.seq_points[self.frame_idx][1] - 10 > -1:
+                    self.seq_points[self.frame_idx][1] -= 10
         self.refresh()
 
     def move_point_right_fast_callback(self, event):
-        if self.point_status == "Top":
-            if self.seq_points[self.frame_idx][0] + 10 < self.curr_file[self.frame_idx].shape[1]:
+        if self.line_mode == 'vertical':
+            if self.seq_points[self.frame_idx][0] + 10 < self.curr_file[self.frame_idx].shape[1] and \
+               self.seq_points[self.frame_idx][1] + 10 < self.curr_file[self.frame_idx].shape[1]:
                 self.seq_points[self.frame_idx][0] += 10
-        if self.point_status == "Bottom":
-            if self.seq_points[self.frame_idx][1] + 10 < self.curr_file[self.frame_idx].shape[1]:
                 self.seq_points[self.frame_idx][1] += 10
+        else:
+            if self.point_status == "Top":
+                if self.seq_points[self.frame_idx][0] + 10 < self.curr_file[self.frame_idx].shape[1]:
+                    self.seq_points[self.frame_idx][0] += 10
+            if self.point_status == "Bottom":
+                if self.seq_points[self.frame_idx][1] + 10 < self.curr_file[self.frame_idx].shape[1]:
+                    self.seq_points[self.frame_idx][1] += 10
         self.refresh()
 
     def toggle_callback(self):
-        if self.point_status == 'Top':
-            self.point_status = 'Bottom'
-            self.status_label_color = 'red'
-        else:
-            self.point_status = 'Top'
-            self.status_label_color = 'blue'
-        self.refresh()
+        if self.line_mode == 'normal':
+            if self.point_status == 'Top':
+                self.point_status = 'Bottom'
+                self.status_label_color = 'red'
+            else:
+                self.point_status = 'Top'
+                self.status_label_color = 'blue'
+            self.refresh()
 
     def next_frame_callback(self, event):
         if self.frame_idx + 1 < len(self.curr_file):
