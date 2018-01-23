@@ -333,6 +333,8 @@ class UI():
         self.is_saved = True
         np.save(self.file_paths[self.file_idx].split('.')[0] +
                 '_centerLines.npy', self.seq_points)
+        self.logger.stamp(self.file_paths[self.file_idx])
+        self.logger.write_log()
         print "{}".format(self.file_idx + 1) + " Saved " + self.file_paths[self.file_idx]
 
     def load_curr_b8(self):
